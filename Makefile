@@ -16,7 +16,7 @@ build: $(TARGET)
 
 .PHONY: deploy
 deploy: build
-	cd infrastructure && AWS_PROFILE=$(AWS_PROFILE) terraform apply
+	cd infrastructure && AWS_PROFILE=$(AWS_PROFILE) terraform apply -var-file="secret.tfvars"
 
 .PHONY: clean
 clean:

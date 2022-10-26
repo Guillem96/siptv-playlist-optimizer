@@ -4,6 +4,7 @@ data/
 # Terraform
 .terraform/
 terraform.tfstate.backup
+secret.tfvars
 
 # Build dir
 bin/

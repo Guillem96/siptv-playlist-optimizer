@@ -12,6 +12,18 @@ provider "aws" {
   region = "eu-west-2"
 }
 
+variable "username" {
+  type        = string
+  description = "Basic authentication username"
+  sensitive   = true
+}
+
+variable "password" {
+  type        = string
+  description = "Basic authentication password"
+  sensitive   = true
+}
+
 locals {
   lambda_handler = "optimized-m3u-iptv-list-server"
   name_prefix    = "siptv-list-optimizer"
@@ -96,6 +108,12 @@ resource "aws_lambda_function" "optimize_siptv_list_lambda" {
     aws_cloudwatch_log_group.log,
   ]
 
+  environment {
+    variables = {
+      USERNAME = var.username
+      PASSWORD = var.password
+    }
+  }
 }
 
 resource "aws_lambda_permission" "apigw" {
