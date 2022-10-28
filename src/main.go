@@ -23,21 +23,21 @@ var conf = siptv.DigestYAMLConfiguration(loadConfFromEnv())
 func main() {
 	fmt.Println(conf)
 	l := log.New(os.Stdout, "SERVER: ", log.Ldate|log.Ltime)
-	h := server.NewHandler(conf, l)
 	a := server.UserCredentials{
 		Username: getEnvOrDefault("USERNAME", DEFAULT_USER),
 		Password: getEnvOrDefault("PASSWORD", DEFAULT_PASSWORD),
 	}
+	h := server.NewBasicHTTPHandler(conf, &a, l)
 
 	if utils.IsRunningInLambdaEnv() {
-		s := server.NewLambdaServer(server.LambdaServerConfig{Auth: &a, Logger: l}, h)
+		s := server.NewLambdaServer(server.LambdaServerConfig{Handler: h, Logger: l})
 		s.Run()
 	} else {
 		port, err := portFromEnv()
 		if err != nil {
 			l.Fatal(err)
 		}
-		sc := server.HttpServerConfig{Host: "0.0.0.0", Port: port, Auth: &a, Logger: l}
+		sc := server.HttpServerConfig{Host: "0.0.0.0", Port: port, Handler: h, Logger: l}
 		s := server.NewHttpServer(sc, h)
 		s.Run()
 	}

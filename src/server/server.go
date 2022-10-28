@@ -19,14 +19,9 @@ type Server interface {
 	Run()
 }
 
-type UserCredentials struct {
-	Username string
-	Password string
-}
-
 type LambdaServerConfig struct {
-	Auth   *UserCredentials
-	Logger *log.Logger
+	Handler Handler
+	Logger  *log.Logger
 }
 
 type LambdaServer struct {
@@ -35,9 +30,9 @@ type LambdaServer struct {
 	l *log.Logger
 }
 
-func NewLambdaServer(config LambdaServerConfig, handler *Handler) *LambdaServer {
+func NewLambdaServer(config LambdaServerConfig) *LambdaServer {
 	ls := &LambdaServer{l: config.Logger, c: config}
-	ls.r = setupRouter(handler, config.Auth)
+	ls.r = setupRouter(config.Handler)
 	return ls
 }
 
@@ -48,10 +43,10 @@ func (ls *LambdaServer) Run() {
 }
 
 type HttpServerConfig struct {
-	Port   int
-	Host   string
-	Auth   *UserCredentials
-	Logger *log.Logger
+	Port    int
+	Host    string
+	Handler Handler
+	Logger  *log.Logger
 }
 
 type HttpServer struct {
@@ -60,9 +55,9 @@ type HttpServer struct {
 	l *log.Logger
 }
 
-func NewHttpServer(config HttpServerConfig, handler *Handler) *HttpServer {
+func NewHttpServer(config HttpServerConfig, handler Handler) *HttpServer {
 	https := &HttpServer{l: config.Logger, c: config}
-	https.r = setupRouter(handler, config.Auth)
+	https.r = setupRouter(config.Handler)
 	return https
 }
 
@@ -94,17 +89,4 @@ func (https *HttpServer) Run() {
 	tc, cancelFn := context.WithTimeout(context.Background(), 30*time.Second)
 	cancelFn()
 	server.Shutdown(tc)
-}
-
-func setupRouter(h *Handler, a *UserCredentials) *mux.Router {
-	r := mux.NewRouter()
-	r.Use(h.loggingMiddleware)
-	if a != nil {
-		h.l.Println("Setting up basic authentication.")
-		r.Use(h.basicAuthMiddleware(a.Username, a.Password, "SIPTV-Optim"))
-	}
-
-	r.Path("/{tv}").HandlerFunc(h.fetchTVM3UPlaylist).Methods("GET")
-	r.NotFoundHandler = http.HandlerFunc(h.notFoundHandler)
-	return r
 }

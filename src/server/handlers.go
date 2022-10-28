@@ -12,44 +12,45 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Handler struct {
+type Handler interface {
+	LogRequest(r *http.Request)
+	CheckBasicAuth(username, password string) bool
+	FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Request)
+}
+
+type UserCredentials struct {
+	Username string
+	Password string
+}
+
+type BasicHTTPHandler struct {
 	l    *log.Logger
 	conf map[string]siptv.TVConfig
+	Auth *UserCredentials
 }
 
-func NewHandler(conf map[string]siptv.TVConfig, logger *log.Logger) *Handler {
-	return &Handler{
+func NewBasicHTTPHandler(conf map[string]siptv.TVConfig, auth *UserCredentials, logger *log.Logger) *BasicHTTPHandler {
+	return &BasicHTTPHandler{
 		l:    logger,
 		conf: conf,
+		Auth: auth,
 	}
 }
 
-func (h *Handler) loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.l.Println(r.RequestURI)
-		next.ServeHTTP(w, r)
-	})
+func (h *BasicHTTPHandler) LogRequest(r *http.Request) {
+	h.l.Printf("%s: %s", r.Method, r.URL)
 }
 
-func (h *Handler) basicAuthMiddleware(username, password, realm string) mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			user, pass, ok := r.BasicAuth()
-			if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
-				sendError(w, http.StatusUnauthorized, "Unauthorized")
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
+func (h *BasicHTTPHandler) CheckBasicAuth(reqUsername, reqPassword string) bool {
+	h.l.Printf("--------- Authenticating %s %s\n", reqUsername, reqPassword)
+	if h.Auth == nil {
+		return true
 	}
+	return subtle.ConstantTimeCompare([]byte(h.Auth.Username), []byte(reqUsername)) != 1 ||
+		subtle.ConstantTimeCompare([]byte(h.Auth.Password), []byte(reqPassword)) != 1
 }
 
-func (h *Handler) notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	h.l.Println("Not found", r.RequestURI)
-	http.Error(w, fmt.Sprintf("Not found: %s", r.RequestURI), http.StatusNotFound)
-}
-
-func (h *Handler) fetchTVM3UPlaylist(w http.ResponseWriter, r *http.Request) {
+func (h *BasicHTTPHandler) FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Request) {
 	tv, isTvPresent := mux.Vars(r)["tv"]
 	if !isTvPresent {
 		sendError(w, http.StatusBadRequest, "unexpected error: missing path {tv}.")
