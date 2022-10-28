@@ -9,11 +9,17 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/utils"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
 	"github.com/gorilla/mux"
 )
+
+type Handler interface {
+	LogRequest(r *http.Request)
+	CheckBasicAuth(username, password string) bool
+	FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Request)
+}
 
 type Server interface {
 	Run()

@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/configuration"
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/server"
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/siptv"
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/utils"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/configuration"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/server"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/siptv"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
 )
 
 const DEFAULT_PORT = 9090
@@ -21,13 +21,12 @@ const DEFAULT_PASSWORD = "pass"
 var conf = siptv.DigestYAMLConfiguration(loadConfFromEnv())
 
 func main() {
-	fmt.Println(conf)
 	l := log.New(os.Stdout, "SERVER: ", log.Ldate|log.Ltime)
-	a := server.UserCredentials{
+	a := siptv.UserCredentials{
 		Username: getEnvOrDefault("USERNAME", DEFAULT_USER),
 		Password: getEnvOrDefault("PASSWORD", DEFAULT_PASSWORD),
 	}
-	h := server.NewBasicHTTPHandler(conf, &a, l)
+	h := siptv.NewBasicHTTPHandler(conf, &a, l)
 
 	if utils.IsRunningInLambdaEnv() {
 		s := server.NewLambdaServer(server.LambdaServerConfig{Handler: h, Logger: l})

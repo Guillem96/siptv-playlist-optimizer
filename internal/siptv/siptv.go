@@ -1,10 +1,10 @@
 package siptv
 
 import (
-	"fmt"
+	"log"
 
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/configuration"
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/rules"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/configuration"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/rules"
 )
 
 type TVConfig struct {
@@ -16,7 +16,6 @@ type TVConfig struct {
 func DigestYAMLConfiguration(conf configuration.Configuration) map[string]TVConfig {
 	res := make(map[string]TVConfig)
 	for tv, tvConf := range conf.Tvs {
-		fmt.Println("-----" + tv)
 		res[tv] = TVConfig{
 			Mac:           tvConf.Mac,
 			Source:        DigestYAMLSource(tvConf.Source),
@@ -24,6 +23,32 @@ func DigestYAMLConfiguration(conf configuration.Configuration) map[string]TVConf
 		}
 	}
 	return res
+}
+
+func OptimizeChannels(conf TVConfig, channels Channels) Channels {
+	res := make(Channels, 0)
+
+	for groupName, groupFilter := range conf.GroupsFilters {
+		log.Println("Creating group " + groupName + "...")
+		filteredChannels := filter(channels, groupFilter)
+		for i, cn := range filteredChannels {
+			filteredChannels[i] = cn.WithGroupName(groupName)
+		}
+		log.Printf("%v has %d channels", groupName, len(filteredChannels))
+
+		res = append(res, filteredChannels...)
+	}
+
+	return res
+}
+
+func filter(channels Channels, cond rules.Condition) (chs Channels) {
+	for _, ch := range channels {
+		if cond.Apply(ch.Name) {
+			chs = append(chs, ch)
+		}
+	}
+	return
 }
 
 func digestYAMLGroups(

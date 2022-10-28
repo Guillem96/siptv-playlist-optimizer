@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/configuration"
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/utils"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/configuration"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
 )
 
 type PlayListSource interface {

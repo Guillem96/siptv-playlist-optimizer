@@ -16,4 +16,5 @@ bin/
 .DS_Store
 
 # Configuration files can contain sensitive information
-config.yaml
+configs/*
+!.gitkeep

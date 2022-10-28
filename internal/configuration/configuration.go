@@ -7,17 +7,17 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/utils"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
 	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
 type Configuration struct {
-	CommonGroups map[string][]Condition        `yaml:"commonGroups,omitempty"`
-	Tvs          map[string]OpimizeSIPTVConfig `yaml:"tvs"`
+	CommonGroups map[string][]Condition         `yaml:"commonGroups,omitempty"`
+	Tvs          map[string]OptimizeSIPTVConfig `yaml:"tvs"`
 }
 
-type OpimizeSIPTVConfig struct {
+type OptimizeSIPTVConfig struct {
 	Mac    string               `yaml:"mac"`
 	Source M3USource            `yaml:"source"`
 	Groups GroupsConfigurations `yaml:"groups"`

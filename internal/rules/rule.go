@@ -3,7 +3,7 @@ package rules
 import (
 	"strings"
 
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/configuration"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/configuration"
 )
 
 type Condition interface {

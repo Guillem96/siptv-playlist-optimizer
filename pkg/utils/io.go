@@ -8,6 +8,12 @@ import (
 	"os"
 )
 
+func SendHTTPError(w http.ResponseWriter, status int, message string) {
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(message))
+}
+
 func WriteText(text, fname string) error {
 	f, err := os.Create(fname)
 	defer f.Close()

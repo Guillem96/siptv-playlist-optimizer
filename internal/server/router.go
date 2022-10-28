@@ -5,9 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
 )
 
-func loggingMiddleware(h Handler) mux.MiddlewareFunc {
+func buildLoggingMiddleware(h Handler) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h.LogRequest(r)
@@ -16,7 +18,7 @@ func loggingMiddleware(h Handler) mux.MiddlewareFunc {
 	}
 }
 
-func basicAuthMiddleware(h Handler, realm string) mux.MiddlewareFunc {
+func buildBasicAuthMiddleware(h Handler, realm string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			user, pass, ok := r.BasicAuth()
@@ -29,7 +31,7 @@ func basicAuthMiddleware(h Handler, realm string) mux.MiddlewareFunc {
 				qpass, ispp := q["password"]
 
 				if !isup || !ispp {
-					sendError(w, http.StatusUnauthorized, "Unauthorized")
+					utils.SendHTTPError(w, http.StatusUnauthorized, "Unauthorized")
 					return
 				}
 				user = quser[0]
@@ -38,7 +40,7 @@ func basicAuthMiddleware(h Handler, realm string) mux.MiddlewareFunc {
 			}
 
 			if !ok || h.CheckBasicAuth(user, pass) {
-				sendError(w, http.StatusUnauthorized, "Unauthorized")
+				utils.SendHTTPError(w, http.StatusUnauthorized, "Unauthorized")
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -50,11 +52,14 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, fmt.Sprintf("Not found: %s", r.RequestURI), http.StatusNotFound)
 }
 
+func fetchAndOptimizeChannelsHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func setupRouter(h Handler) *mux.Router {
 	r := mux.NewRouter()
-	r.Use(loggingMiddleware(h))
-
-	r.Use(basicAuthMiddleware(h, "SIPTV-Optim"))
+	r.Use(buildLoggingMiddleware(h))
+	r.Use(buildBasicAuthMiddleware(h, "SIPTV-Optim"))
 
 	r.Path("/{tv}").HandlerFunc(h.FetchTVM3UPlaylist).Methods("GET")
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)

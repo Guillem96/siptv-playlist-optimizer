@@ -1,4 +1,4 @@
-package server
+package siptv
 
 import (
 	"crypto/subtle"
@@ -7,16 +7,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/siptv"
-	"github.com/Guillem96/optimized-m3u-iptv-list-server/src/utils"
+	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
 	"github.com/gorilla/mux"
 )
-
-type Handler interface {
-	LogRequest(r *http.Request)
-	CheckBasicAuth(username, password string) bool
-	FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Request)
-}
 
 type UserCredentials struct {
 	Username string
@@ -25,11 +18,11 @@ type UserCredentials struct {
 
 type BasicHTTPHandler struct {
 	l    *log.Logger
-	conf map[string]siptv.TVConfig
+	conf map[string]TVConfig
 	Auth *UserCredentials
 }
 
-func NewBasicHTTPHandler(conf map[string]siptv.TVConfig, auth *UserCredentials, logger *log.Logger) *BasicHTTPHandler {
+func NewBasicHTTPHandler(conf map[string]TVConfig, auth *UserCredentials, logger *log.Logger) *BasicHTTPHandler {
 	return &BasicHTTPHandler{
 		l:    logger,
 		conf: conf,
@@ -42,7 +35,6 @@ func (h *BasicHTTPHandler) LogRequest(r *http.Request) {
 }
 
 func (h *BasicHTTPHandler) CheckBasicAuth(reqUsername, reqPassword string) bool {
-	h.l.Printf("--------- Authenticating %s %s\n", reqUsername, reqPassword)
 	if h.Auth == nil {
 		return true
 	}
@@ -53,7 +45,7 @@ func (h *BasicHTTPHandler) CheckBasicAuth(reqUsername, reqPassword string) bool 
 func (h *BasicHTTPHandler) FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Request) {
 	tv, isTvPresent := mux.Vars(r)["tv"]
 	if !isTvPresent {
-		sendError(w, http.StatusBadRequest, "unexpected error: missing path {tv}.")
+		utils.SendHTTPError(w, http.StatusBadRequest, "unexpected error: missing path {tv}.")
 		return
 	}
 
@@ -63,7 +55,7 @@ func (h *BasicHTTPHandler) FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Req
 	exists, err := utils.Exists(fname)
 	exists = false
 	if err != nil {
-		sendError(w, http.StatusInternalServerError, "Error while checking if file exists.")
+		utils.SendHTTPError(w, http.StatusInternalServerError, "Error while checking if file exists.")
 		return
 	}
 
@@ -74,7 +66,7 @@ func (h *BasicHTTPHandler) FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Req
 
 		tvConf, isConfPresent := h.conf[tv]
 		if !isConfPresent {
-			sendError(w, http.StatusNotFound, fmt.Sprintf("%v does not exists.", tv))
+			utils.SendHTTPError(w, http.StatusNotFound, fmt.Sprintf("%v does not exists.", tv))
 			return
 		}
 
@@ -82,23 +74,17 @@ func (h *BasicHTTPHandler) FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Req
 		channels, err := tvConf.Source.Fetch()
 		if err != nil {
 			h.l.Printf("Error fetching channels %v", err)
-			sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error fetching channels from %v.", tvConf.Source))
+			utils.SendHTTPError(w, http.StatusInternalServerError, fmt.Sprintf("Error fetching channels from %v.", tvConf.Source))
 			return
 		}
 
-		ocs := siptv.OptimizeChannels(tvConf, channels)
+		ocs := OptimizeChannels(tvConf, channels)
 		if err := utils.WriteText(ocs.Marshal(), fname); err != nil {
 			h.l.Printf("Error when writing output M3U: %v\n", err)
-			sendError(w, http.StatusInternalServerError, "Error while writing generated M3U playlist.")
+			utils.SendHTTPError(w, http.StatusInternalServerError, "Error while writing generated M3U playlist.")
 			return
 		}
 	}
 
 	http.ServeFile(w, r, fname)
-}
-
-func sendError(w http.ResponseWriter, status int, message string) {
-	w.WriteHeader(status)
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(message))
 }
