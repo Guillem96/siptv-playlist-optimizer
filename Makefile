@@ -8,11 +8,13 @@ CONFIG_FILE=configs/config.yaml
 
 TARGET=optimized-m3u-iptv-list-server
 
+BASE_PATH := $(shell pwd)
+
 $(BUILDIR):
 	mkdir -p $(BUILDIR)
 
 $(TARGET): $(BUILDIR)
-	env GOOS=linux GOARCH=amd64 go build -o $(BUILDIR)/$(TARGET) $(API_CMD_DIR)
+	cd $(API_CMD_DIR) && env GOOS=linux GOARCH=amd64 go build -o $(BASE_PATH)/$(BUILDIR)/$(TARGET)
 
 .PHONY: build
 build: $(TARGET)
