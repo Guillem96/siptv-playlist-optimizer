@@ -25,24 +25,24 @@ func DigestYAMLConfiguration(conf configuration.Configuration) map[string]TVConf
 	return res
 }
 
-func OptimizeChannels(conf TVConfig, channels Channels) Channels {
-	res := make(Channels, 0)
+func OptimizePlaylist(conf TVConfig, channels Playlist) Playlist {
+	res := make(Playlist, 0)
 
 	for groupName, groupFilter := range conf.GroupsFilters {
 		log.Println("Creating group " + groupName + "...")
-		filteredChannels := filter(channels, groupFilter)
-		for i, cn := range filteredChannels {
-			filteredChannels[i] = cn.WithGroupName(groupName)
+		filteredPlaylist := filter(channels, groupFilter)
+		for i, cn := range filteredPlaylist {
+			filteredPlaylist[i] = cn.WithGroupName(groupName)
 		}
-		log.Printf("%v has %d channels", groupName, len(filteredChannels))
+		log.Printf("%v has %d channels", groupName, len(filteredPlaylist))
 
-		res = append(res, filteredChannels...)
+		res = append(res, filteredPlaylist...)
 	}
 
 	return res
 }
 
-func filter(channels Channels, cond rules.Condition) (chs Channels) {
+func filter(channels Playlist, cond rules.Condition) (chs Playlist) {
 	for _, ch := range channels {
 		if cond.Apply(ch.Name) {
 			chs = append(chs, ch)
@@ -56,6 +56,10 @@ func digestYAMLGroups(
 	commonGroups map[string][]configuration.Condition) map[string]rules.Condition {
 
 	res := make(map[string]rules.Condition)
+
+	if groups.Definitions == nil {
+		groups.Definitions = make(map[string][]configuration.Condition)
+	}
 
 	groupsToCreate := groups.Definitions
 	for _, im := range groups.Imports {

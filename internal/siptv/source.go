@@ -12,14 +12,14 @@ import (
 )
 
 type PlayListSource interface {
-	Fetch() (Channels, error)
+	Fetch() (Playlist, error)
 }
 
 type PlayListFileSource struct {
 	LocalPath string
 }
 
-func (s *PlayListFileSource) Fetch() (Channels, error) {
+func (s *PlayListFileSource) Fetch() (Playlist, error) {
 	return Unmarshal(s.LocalPath)
 }
 
@@ -27,7 +27,7 @@ type PlayListUrlSource struct {
 	Url string
 }
 
-func (s *PlayListUrlSource) Fetch() (Channels, error) {
+func (s *PlayListUrlSource) Fetch() (Playlist, error) {
 	parsedUrl, err := url.Parse(s.Url)
 	if err != nil {
 		return nil, fmt.Errorf("Error Parsing download url %v", s.Url)

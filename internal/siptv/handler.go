@@ -53,7 +53,7 @@ func (h *BasicHTTPHandler) FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Req
 
 	fname := filepath.Join(utils.TempDir(), fmt.Sprintf("%s.m3u", tv))
 	exists, err := utils.Exists(fname)
-	exists = false
+
 	if err != nil {
 		utils.SendHTTPError(w, http.StatusInternalServerError, "Error while checking if file exists.")
 		return
@@ -70,7 +70,7 @@ func (h *BasicHTTPHandler) FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		h.l.Printf("Fetching Channels from %+v\n", tvConf.Source)
+		h.l.Printf("Fetching playlist from %+v\n", tvConf.Source)
 		channels, err := tvConf.Source.Fetch()
 		if err != nil {
 			h.l.Printf("Error fetching channels %v", err)
@@ -78,7 +78,7 @@ func (h *BasicHTTPHandler) FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		ocs := OptimizeChannels(tvConf, channels)
+		ocs := OptimizePlaylist(tvConf, channels)
 		if err := utils.WriteText(ocs.Marshal(), fname); err != nil {
 			h.l.Printf("Error when writing output M3U: %v\n", err)
 			utils.SendHTTPError(w, http.StatusInternalServerError, "Error while writing generated M3U playlist.")

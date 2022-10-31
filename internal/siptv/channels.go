@@ -18,7 +18,7 @@ type Channel struct {
 	Url      string
 }
 
-type Channels []*Channel
+type Playlist []*Channel
 
 func (c *Channel) WithGroupName(gn string) *Channel {
 	return &Channel{
@@ -36,7 +36,7 @@ func (c *Channel) Marshal() string {
 		c.Name, c.Logo, c.Group, c.ShowName, c.Url)
 }
 
-func (cs Channels) Marshal() string {
+func (cs Playlist) Marshal() string {
 	res := "#EXTM3U\n"
 	for _, c := range cs {
 		res += c.Marshal()
@@ -65,7 +65,7 @@ func FromText(metadata, url string) *Channel {
 	}
 }
 
-func Unmarshal(m3uFile string) (Channels, error) {
+func Unmarshal(m3uFile string) (Playlist, error) {
 	readFile, err := os.Open(m3uFile)
 	defer readFile.Close()
 
@@ -75,8 +75,13 @@ func Unmarshal(m3uFile string) (Channels, error) {
 
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
-	fileScanner.Scan() // Skip header
-	var cs Channels
+	for fileScanner.Scan() { // Skip header
+		if fileScanner.Text() == "#EXTM3U" {
+			break
+		}
+	}
+
+	var cs Playlist
 	for fileScanner.Scan() {
 		metadata := fileScanner.Text()
 		fileScanner.Scan() // Move to url

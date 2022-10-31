@@ -52,10 +52,6 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, fmt.Sprintf("Not found: %s", r.RequestURI), http.StatusNotFound)
 }
 
-func fetchAndOptimizeChannelsHandler(w http.ResponseWriter, r *http.Request) {
-
-}
-
 func setupRouter(h Handler) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(buildLoggingMiddleware(h))
