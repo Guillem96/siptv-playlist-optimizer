@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
@@ -85,9 +86,8 @@ func (https *HttpServer) Run() {
 	https.l.Printf("Serving at %v...\n", server.Addr)
 
 	// Graceful stop
-	sigChannel := make(chan os.Signal)
-	signal.Notify(sigChannel, os.Interrupt)
-	signal.Notify(sigChannel, os.Kill)
+	sigChannel := make(chan os.Signal, 1)
+	signal.Notify(sigChannel, os.Interrupt, syscall.SIGTERM)
 
 	sig := <-sigChannel
 	https.l.Println("Received terminate, graceful shutdown", sig)

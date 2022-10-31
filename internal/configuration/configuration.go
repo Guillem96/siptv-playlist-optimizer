@@ -3,8 +3,8 @@ package configuration
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
@@ -42,7 +42,7 @@ type Condition struct {
 
 func LoadConfiguration(fname string) Configuration {
 	var conf Configuration
-	yamlFile, err := ioutil.ReadFile(fname)
+	yamlFile, err := os.ReadFile(fname)
 
 	if err != nil {
 		log.Fatalf("yamlFile.Get err   #%v ", err)
@@ -71,7 +71,7 @@ func validate(c Configuration) error {
 
 	for tvName, tvConf := range c.Tvs {
 		if tvConf.Source.File == "" && tvConf.Source.Url == "" {
-			return errors.New(fmt.Sprintf("tvs.%v.source.file and tvs.%v.source.url can be empty", tvName, tvName))
+			return fmt.Errorf("tvs.%v.source.file and tvs.%v.source.url can be empty", tvName, tvName)
 		}
 
 		for tvGroupName, tvGroupConds := range tvConf.Groups.Definitions {

@@ -14,15 +14,22 @@ $(BUILDIR):
 	mkdir -p $(BUILDIR)
 
 $(TARGET): $(BUILDIR)
-	cd $(API_CMD_DIR) && env GOOS=linux GOARCH=amd64 go build -o $(BASE_PATH)/$(BUILDIR)/$(TARGET)
+	@cd $(API_CMD_DIR) && \
+		env GOOS=linux GOARCH=amd64 go build -o $(BASE_PATH)/$(BUILDIR)/$(TARGET)
+
+.PHONY: lint
+lint:
+	go vet ./...
+	staticcheck ./...
 
 .PHONY: build
 build: $(TARGET)
-	cp $(CONFIG_FILE) $(BUILDIR)/
+	@cp $(CONFIG_FILE) $(BUILDIR)/
 
 .PHONY: deploy
 deploy: build
-	cd $(DEPLOYMENT_DIR) && AWS_PROFILE=$(AWS_PROFILE) terraform apply -var-file="secret.tfvars"
+	cd $(DEPLOYMENT_DIR) && \
+		AWS_PROFILE=$(AWS_PROFILE) terraform apply -var-file="secret.tfvars"
 
 .PHONY: clean
 clean:

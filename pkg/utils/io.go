@@ -16,11 +16,11 @@ func SendHTTPError(w http.ResponseWriter, status int, message string) {
 
 func WriteText(text, fname string) error {
 	f, err := os.Create(fname)
-	defer f.Close()
-
 	if err != nil {
 		return err
 	}
+	defer f.Close()
+
 	_, err = f.WriteString(text)
 	if err != nil {
 		return err

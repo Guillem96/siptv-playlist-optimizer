@@ -30,7 +30,7 @@ type PlayListUrlSource struct {
 func (s *PlayListUrlSource) Fetch() (Playlist, error) {
 	parsedUrl, err := url.Parse(s.Url)
 	if err != nil {
-		return nil, fmt.Errorf("Error Parsing download url %v", s.Url)
+		return nil, fmt.Errorf("error Parsing download url %v", s.Url)
 	}
 
 	fname := filepath.Join(

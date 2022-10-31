@@ -67,11 +67,11 @@ func FromText(metadata, url string) *Channel {
 
 func Unmarshal(m3uFile string) (Playlist, error) {
 	readFile, err := os.Open(m3uFile)
-	defer readFile.Close()
 
 	if err != nil {
-		return nil, fmt.Errorf("reading m3u file: %v\n", m3uFile)
+		return nil, fmt.Errorf("reading m3u file: %v", m3uFile)
 	}
+	defer readFile.Close()
 
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
