@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/configuration"
@@ -40,6 +41,14 @@ type NotCondition struct {
 
 func (c *NotCondition) Apply(value string) bool {
 	return !c.ToNeg.Apply(value)
+}
+
+type RegexpCondition struct {
+	Regexp *regexp.Regexp
+}
+
+func (c *RegexpCondition) Apply(value string) bool {
+	return c.Regexp.Match([]byte(value))
 }
 
 type AllCondition struct {
@@ -85,6 +94,10 @@ func DigestYAMLCondition(confCond configuration.Condition) Condition {
 
 	if confCond.NoContains != "" {
 		res = append(res, &NotCondition{&ContainsCondition{confCond.NoContains}})
+	}
+
+	if confCond.Regexp != "" {
+		res = append(res, &RegexpCondition{Regexp: regexp.MustCompile(confCond.Regexp)})
 	}
 
 	return &AllCondition{res}

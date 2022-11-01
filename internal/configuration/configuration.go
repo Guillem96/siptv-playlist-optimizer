@@ -38,6 +38,7 @@ type Condition struct {
 	Contains   string `yaml:"contains,omitempty"`
 	NoContains string `yaml:"noContains,omitempty"`
 	StartsWith string `yaml:"startswith,omitempty"`
+	Regexp     string `yaml:"regex,omitempty"`
 }
 
 func LoadConfiguration(fname string) Configuration {
@@ -108,14 +109,14 @@ func validateImport(ig, key string, commonGroupsNames []string) error {
 }
 
 func validateCondition(c Condition, key string) error {
-	if c.Is != "" && (c.Contains != "" || c.StartsWith != "" || c.NoContains != "") {
+	if c.Is != "" && (c.Contains != "" || c.StartsWith != "" || c.NoContains != "" || c.Regexp != "") {
 		return errors.New("Invalid condition in " + key + ": If `is` is provided" +
-			"`startswith`, `contains` and `noContains` must be empty.")
+			"`startswith`, `contains`, `regex` and `noContains` must be empty.")
 	}
 
-	if c.Is == "" && c.Contains == "" && c.StartsWith == "" {
+	if c.Is == "" && c.Contains == "" && c.StartsWith == "" && c.NoContains == "" && c.Regexp == "" {
 		return errors.New(
-			"Invalid condition in " + key + ": One of `is`, `contains`, `noContains` or `startswith` needs a value.")
+			"Invalid condition in " + key + ": One of `is`, `contains`, `noContains`, `regexp` or `startswith` needs a value.")
 	}
 
 	return nil
