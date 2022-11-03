@@ -12,10 +12,12 @@ var TAGS_REGEX = regexp.MustCompile("([a-zA-Z0-9-]+?)=\"([^\"]+)\"")
 
 type Channel struct {
 	Name     string
+	EPGCode  string
 	Logo     string
 	Group    string
 	ShowName string
 	Url      string
+	StreamID string
 }
 
 type Playlist []*Channel
@@ -27,13 +29,14 @@ func (c *Channel) WithGroupName(gn string) *Channel {
 		Group:    gn,
 		ShowName: c.ShowName,
 		Url:      c.Url,
+		StreamID: c.StreamID,
 	}
 }
 
 func (c *Channel) Marshal() string {
 	return fmt.Sprintf(
-		"#EXTINF:-1 tvg-ID=\"\" tvg-name=\"%v\" tvg-logo=\"%v\" group-title=\"%v\",%v\n%v\n",
-		c.Name, c.Logo, c.Group, c.ShowName, c.Url)
+		"#EXTINF:-1 tvg-ID=\"%v\" tvg-name=\"%v\" tvg-logo=\"%v\" group-title=\"%v\",%v\n%v\n",
+		c.EPGCode, c.Name, c.Logo, c.Group, c.ShowName, c.Url)
 }
 
 func (cs Playlist) Marshal() string {
@@ -47,7 +50,7 @@ func (cs Playlist) Marshal() string {
 func FromText(metadata, url string) *Channel {
 	splitLine := strings.Split(metadata, ",")
 	metadata = splitLine[0]
-	metadata = strings.TrimPrefix(metadata, "#EXTINF:-1 tvg-ID=\"\" ")
+	metadata = strings.TrimPrefix(metadata, "#EXTINF:-1 ")
 
 	attrMatches := TAGS_REGEX.FindAll([]byte(metadata), -1)
 	attrMap := make(map[string]string)
@@ -56,12 +59,15 @@ func FromText(metadata, url string) *Channel {
 		attrMap[string(splitAttr[0])] = strings.Trim(string(splitAttr[1]), "\"")
 	}
 
+	splitUrl := strings.Split(url, "/")
 	return &Channel{
 		Name:     attrMap["tvg-name"],
+		EPGCode:  attrMap["tvg-ID"],
 		Logo:     attrMap["tvg-logo"],
 		Group:    attrMap["group-title"],
 		ShowName: splitLine[1],
 		Url:      url,
+		StreamID: splitUrl[len(splitUrl)-1],
 	}
 }
 
