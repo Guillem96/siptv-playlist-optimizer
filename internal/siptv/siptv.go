@@ -2,6 +2,8 @@ package siptv
 
 import (
 	"log"
+	"sort"
+	"strings"
 
 	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/configuration"
 	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/rules"
@@ -38,6 +40,11 @@ func OptimizePlaylist(conf TVConfig, channels Playlist) Playlist {
 
 		res = append(res, filteredPlaylist...)
 	}
+
+	// Make it deterministic
+	sort.SliceStable(res, func(i, j int) bool {
+		return strings.Compare(res[i].ShowName, res[j].ShowName) == -1
+	})
 
 	return res
 }
