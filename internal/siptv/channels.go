@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ type Channel struct {
 	Group    string
 	ShowName string
 	Url      string
-	StreamID string
+	StreamID int
 }
 
 type Playlist []*Channel
@@ -47,7 +48,7 @@ func (cs Playlist) Marshal() string {
 	return strings.TrimSuffix(res, "\n")
 }
 
-func FromText(metadata, url string) *Channel {
+func FromText(metadata, url string) (*Channel, error) {
 	splitLine := strings.Split(metadata, ",")
 	metadata = splitLine[0]
 	metadata = strings.TrimPrefix(metadata, "#EXTINF:-1 ")
@@ -60,6 +61,11 @@ func FromText(metadata, url string) *Channel {
 	}
 
 	splitUrl := strings.Split(url, "/")
+	streamId, err := strconv.Atoi(splitUrl[len(splitUrl)-1])
+	if err != nil {
+		streamId = -1
+	}
+
 	return &Channel{
 		Name:     attrMap["tvg-name"],
 		EPGCode:  attrMap["tvg-ID"],
@@ -67,8 +73,8 @@ func FromText(metadata, url string) *Channel {
 		Group:    attrMap["group-title"],
 		ShowName: splitLine[1],
 		Url:      url,
-		StreamID: splitUrl[len(splitUrl)-1],
-	}
+		StreamID: streamId,
+	}, nil
 }
 
 func Unmarshal(m3uFile string) (Playlist, error) {
@@ -91,7 +97,11 @@ func Unmarshal(m3uFile string) (Playlist, error) {
 	for fileScanner.Scan() {
 		metadata := fileScanner.Text()
 		fileScanner.Scan() // Move to url
-		cs = append(cs, FromText(metadata, fileScanner.Text()))
+		nc, err := FromText(metadata, fileScanner.Text())
+		if err != nil {
+			return nil, fmt.Errorf("parsing line %v: %v", metadata, err.Error())
+		}
+		cs = append(cs, nc)
 	}
 	return cs, nil
 }

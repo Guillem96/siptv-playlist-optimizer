@@ -24,8 +24,10 @@ type OptimizeSIPTVConfig struct {
 }
 
 type M3USource struct {
-	Url  string `yaml:"url,omitempty"`
-	File string `yaml:"file,omitempty"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Url      string `yaml:"url"`
+	FromFile string `yaml:"fromFile,omitempty"`
 }
 
 type GroupsConfigurations struct {
@@ -46,7 +48,7 @@ func LoadConfiguration(fname string) Configuration {
 	yamlFile, err := os.ReadFile(fname)
 
 	if err != nil {
-		log.Fatalf("yamlFile.Get err   #%v ", err)
+		log.Fatalf("yamlFile.Get err #%v ", err)
 	}
 
 	if err = yaml.Unmarshal(yamlFile, &conf); err != nil {
@@ -61,8 +63,8 @@ func LoadConfiguration(fname string) Configuration {
 }
 
 func validate(c Configuration) error {
-	for groupName, conds := range c.CommonGroups {
-		for i, cond := range conds {
+	for groupName, conditions := range c.CommonGroups {
+		for i, cond := range conditions {
 			err := validateCondition(cond, fmt.Sprintf("commonGroups.%v[%d]", groupName, i))
 			if err != nil {
 				return err
@@ -71,12 +73,8 @@ func validate(c Configuration) error {
 	}
 
 	for tvName, tvConf := range c.Tvs {
-		if tvConf.Source.File == "" && tvConf.Source.Url == "" {
-			return fmt.Errorf("tvs.%v.source.file and tvs.%v.source.url can be empty", tvName, tvName)
-		}
-
-		for tvGroupName, tvGroupConds := range tvConf.Groups.Definitions {
-			for i, cond := range tvGroupConds {
+		for tvGroupName, tvGroupConditions := range tvConf.Groups.Definitions {
+			for i, cond := range tvGroupConditions {
 				err := validateCondition(
 					cond,
 					fmt.Sprintf("tvs.%v.groups.definitions.%v[%d]", tvName, tvGroupName, i))

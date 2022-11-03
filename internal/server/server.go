@@ -20,6 +20,8 @@ type Handler interface {
 	LogRequest(r *http.Request)
 	CheckBasicAuth(username, password string) bool
 	FetchTVM3UPlaylist(w http.ResponseWriter, r *http.Request)
+	PlayerApiHandler(w http.ResponseWriter, r *http.Request)
+	RedirectToStreamHandler(w http.ResponseWriter, r *http.Request)
 }
 
 type Server interface {

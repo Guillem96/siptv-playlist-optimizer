@@ -26,17 +26,18 @@ func buildBasicAuthMiddleware(h Handler, realm string) mux.MiddlewareFunc {
 			if !ok {
 				// Check if user and password are in query params
 				q := r.URL.Query()
+				user = q.Get("username")
+				pass = q.Get("password")
+				ok = q.Has("username") && q.Has("password")
+			}
 
-				quser, isup := q["username"]
-				qpass, ispp := q["password"]
+			if !ok {
+				var isUserPresent bool
+				var isPasswordPresent bool
 
-				if !isup || !ispp {
-					utils.SendHTTPError(w, http.StatusUnauthorized, "Unauthorized")
-					return
-				}
-				user = quser[0]
-				pass = qpass[0]
-				ok = true
+				user, isUserPresent = mux.Vars(r)["user"]
+				pass, isPasswordPresent = mux.Vars(r)["password"]
+				ok = isUserPresent && isPasswordPresent
 			}
 
 			if !ok || h.CheckBasicAuth(user, pass) {
@@ -49,15 +50,19 @@ func buildBasicAuthMiddleware(h Handler, realm string) mux.MiddlewareFunc {
 }
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("NOT FOUND", r.URL)
 	http.Error(w, fmt.Sprintf("Not found: %s", r.RequestURI), http.StatusNotFound)
 }
 
 func setupRouter(h Handler) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(buildLoggingMiddleware(h))
-	r.Use(buildBasicAuthMiddleware(h, "SIPTV-Optim"))
+	r.Use(buildBasicAuthMiddleware(h, "SIPTV-Optimized"))
 
+	r.Path("/{tv}/player_api.php").HandlerFunc(h.PlayerApiHandler).Methods("GET")
+	r.Path("/{tv}/live/{user}/{password}/{streamId}.ts").HandlerFunc(h.RedirectToStreamHandler).Methods("GET")
 	r.Path("/{tv}").HandlerFunc(h.FetchTVM3UPlaylist).Methods("GET")
+
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return r
 }

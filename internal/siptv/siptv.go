@@ -73,8 +73,8 @@ func digestYAMLGroups(
 		groupsToCreate[im] = commonGroups[im]
 	}
 
-	for groupName, conds := range groupsToCreate {
-		res[groupName] = rules.DigestYAMLConditions(conds)
+	for groupName, conditions := range groupsToCreate {
+		res[groupName] = rules.DigestYAMLConditions(conditions)
 	}
 
 	return res
