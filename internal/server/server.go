@@ -39,12 +39,15 @@ type LambdaServer struct {
 	l *log.Logger
 }
 
+// NewLambdaServer creates a pointer to a server ready to run within an
+// AWS lambda environment
 func NewLambdaServer(config LambdaServerConfig) *LambdaServer {
 	ls := &LambdaServer{l: config.Logger, c: config}
 	ls.r = setupRouter(config.Handler)
 	return ls
 }
 
+// Run starts the LambdaServer
 func (ls *LambdaServer) Run() {
 	ls.l.Println("Starting up in Lambda Runtime")
 	adapter := gorillamux.NewV2(ls.r)
@@ -64,12 +67,14 @@ type HttpServer struct {
 	l *log.Logger
 }
 
+// NewHttpServer creates an HTTP server that can run everywhere
 func NewHttpServer(config HttpServerConfig, handler Handler) *HttpServer {
 	https := &HttpServer{l: config.Logger, c: config}
 	https.r = setupRouter(config.Handler)
 	return https
 }
 
+// Run starts the HTTP server
 func (https *HttpServer) Run() {
 	server := &http.Server{
 		Addr:         fmt.Sprintf("%v:%v", https.c.Host, https.c.Port),

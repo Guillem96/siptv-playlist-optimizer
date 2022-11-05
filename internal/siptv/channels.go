@@ -2,6 +2,7 @@ package siptv
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -12,17 +13,31 @@ import (
 var TAGS_REGEX = regexp.MustCompile("([a-zA-Z0-9-]+?)=\"([^\"]+)\"")
 
 type Channel struct {
-	Name     string
-	EPGCode  string
-	Logo     string
-	Group    string
+	Name     string `json:"name"`
+	EPGCode  string `json:"epg_channel_id"`
+	Logo     string `json:"stream_icon"`
+	Group    string `json:"category_id"`
 	ShowName string
 	Url      string
-	StreamID int
+	StreamID int `json:"stream_id"`
 }
 
 type Playlist []*Channel
 
+func (cs *Playlist) FromJSON(jsonText []byte, baseStreamUrl string) error {
+	if err := json.Unmarshal(jsonText, cs); err != nil {
+		return err
+	}
+
+	for _, c := range *cs {
+		c.ShowName = c.Name
+		c.Url = fmt.Sprintf("%s/%d", baseStreamUrl, c.StreamID)
+	}
+
+	return nil
+}
+
+// WithGroupName creates a new channel with the group name set to the given value
 func (c *Channel) WithGroupName(gn string) *Channel {
 	return &Channel{
 		Name:     c.Name,
@@ -31,15 +46,19 @@ func (c *Channel) WithGroupName(gn string) *Channel {
 		ShowName: c.ShowName,
 		Url:      c.Url,
 		StreamID: c.StreamID,
+		EPGCode:  c.EPGCode,
 	}
 }
 
+// Marshal serializes the Channel to a single M3U record
 func (c *Channel) Marshal() string {
 	return fmt.Sprintf(
 		"#EXTINF:-1 tvg-ID=\"%v\" tvg-name=\"%v\" tvg-logo=\"%v\" group-title=\"%v\",%v\n%v\n",
 		c.EPGCode, c.Name, c.Logo, c.Group, c.ShowName, c.Url)
 }
 
+// Marshal serializes a list of channels to a full M3U string, ready to be
+// written into a file
 func (cs Playlist) Marshal() string {
 	res := "#EXTM3U\n"
 	for _, c := range cs {
@@ -48,6 +67,7 @@ func (cs Playlist) Marshal() string {
 	return strings.TrimSuffix(res, "\n")
 }
 
+// FromText loads a channel from its raw M3U representation
 func FromText(metadata, url string) (*Channel, error) {
 	splitLine := strings.Split(metadata, ",")
 	metadata = splitLine[0]
@@ -77,6 +97,7 @@ func FromText(metadata, url string) (*Channel, error) {
 	}, nil
 }
 
+// Unmarshal parses an M3U file and returns a list of channels
 func Unmarshal(m3uFile string) (Playlist, error) {
 	readFile, err := os.Open(m3uFile)
 

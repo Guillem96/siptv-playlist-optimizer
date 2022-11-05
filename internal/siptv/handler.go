@@ -147,9 +147,6 @@ func (h *BasicHTTPHandler) getLiveStreamsHandler(tvConf *TVConfig, w http.Respon
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-
 	var res []liveStreams
 	for i, c := range channels {
 		res = append(res, liveStreams{

@@ -8,12 +8,16 @@ import (
 	"os"
 )
 
+// SendHTTPError simplifies the process of writing a HTTP status code an a message
+// to the response writer
 func SendHTTPError(w http.ResponseWriter, status int, message string) {
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(message))
 }
 
+// WriteText is an utility function that writes the given string to the given
+// text file (fname)
 func WriteText(text, fname string) error {
 	f, err := os.Create(fname)
 	if err != nil {
@@ -28,6 +32,7 @@ func WriteText(text, fname string) error {
 	return nil
 }
 
+// TempDir returns the path to the temporal directory
 func TempDir() string {
 	if IsRunningInLambdaEnv() {
 		return "/tmp"
@@ -35,6 +40,7 @@ func TempDir() string {
 	return os.TempDir()
 }
 
+// Exists checks if the given file name exists
 func Exists(name string) (bool, error) {
 	_, err := os.Stat(name)
 	if err == nil {
@@ -46,6 +52,7 @@ func Exists(name string) (bool, error) {
 	return false, err
 }
 
+// DownloadFile downloads a file served in an HTTP file server
 func DownloadFile(filepath, url string) (err error) {
 	// Create the file
 	out, err := os.Create(filepath)

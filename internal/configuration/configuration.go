@@ -43,6 +43,7 @@ type Condition struct {
 	Regexp     string `yaml:"regex,omitempty"`
 }
 
+// LoadConfiguration loads and validates the YAML configuration
 func LoadConfiguration(fname string) Configuration {
 	var conf Configuration
 	yamlFile, err := os.ReadFile(fname)

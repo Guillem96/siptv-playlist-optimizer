@@ -15,6 +15,8 @@ type TVConfig struct {
 	GroupsFilters map[string]rules.Condition
 }
 
+// DigestYAMLConfiguration digests a configuration.Configuration object so it can easily
+// be used within the siptv package
 func DigestYAMLConfiguration(conf configuration.Configuration) map[string]TVConfig {
 	res := make(map[string]TVConfig)
 	for tv, tvConf := range conf.Tvs {
@@ -27,6 +29,8 @@ func DigestYAMLConfiguration(conf configuration.Configuration) map[string]TVConf
 	return res
 }
 
+// OptimizePlaylist given a configuration and a list of channels, removes the clutter
+// and simplifies the M3U playlist
 func OptimizePlaylist(conf TVConfig, channels Playlist) Playlist {
 	res := make(Playlist, 0)
 
