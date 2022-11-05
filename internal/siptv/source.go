@@ -33,20 +33,20 @@ func (s *defaultSource) EPGUrl(streamId string) (string, error) {
 	return url, nil
 }
 
-type PlayListFileSource struct {
+type PlayListLocalFileSource struct {
 	*defaultSource
 	LocalPath string
 }
 
-func (s *PlayListFileSource) Fetch() (Playlist, error) {
+func (s *PlayListLocalFileSource) Fetch() (Playlist, error) {
 	return Unmarshal(s.LocalPath)
 }
 
-type PlayListUrlSource struct {
+type PlayListRemoteFileSource struct {
 	*defaultSource
 }
 
-func (s *PlayListUrlSource) Fetch() (Playlist, error) {
+func (s *PlayListRemoteFileSource) Fetch() (Playlist, error) {
 	fname := filepath.Join(utils.TempDir(), fmt.Sprintf("%v.m3u", s.Username))
 	urlChannels := fmt.Sprintf("%s/get.php?username=%s&password=%s&type=m3u_plus&output=mpegts",
 		s.Url, s.Username, s.Password)
@@ -89,8 +89,14 @@ func (s *PlayListAPISource) Fetch() (cs Playlist, err error) {
 
 func DigestYAMLSource(source configuration.M3USource) PlayListSource {
 	ds := &defaultSource{Username: source.Username, Password: source.Password, Url: source.Url}
-	if source.FromFile != "" {
-		return &PlayListFileSource{ds, source.FromFile}
+
+	if source.FromLocalFile != "" {
+		return &PlayListLocalFileSource{ds, source.FromLocalFile}
 	}
-	return &PlayListAPISource{ds}
+
+	if source.UseAPI {
+		return &PlayListAPISource{ds}
+	}
+
+	return &PlayListRemoteFileSource{ds}
 }

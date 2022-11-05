@@ -24,10 +24,11 @@ type OptimizeSIPTVConfig struct {
 }
 
 type M3USource struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Url      string `yaml:"url"`
-	FromFile string `yaml:"fromFile,omitempty"`
+	Username      string `yaml:"username"`
+	Password      string `yaml:"password"`
+	Url           string `yaml:"url"`
+	FromLocalFile string `yaml:"fromLocalFile,omitempty"`
+	UseAPI        bool   `yaml:"useApi"`
 }
 
 type GroupsConfigurations struct {
@@ -74,6 +75,11 @@ func validate(c Configuration) error {
 	}
 
 	for tvName, tvConf := range c.Tvs {
+		if tvConf.Source.FromLocalFile != "" && tvConf.Source.UseAPI {
+			return fmt.Errorf(
+				"tvs.%v.source: Cannot set `fromLocalFile` and useApi to `true` at same time", tvName)
+		}
+
 		for tvGroupName, tvGroupConditions := range tvConf.Groups.Definitions {
 			for i, cond := range tvGroupConditions {
 				err := validateCondition(
