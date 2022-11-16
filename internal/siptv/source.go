@@ -2,10 +2,9 @@ package siptv
 
 import (
 	"fmt"
-	"net/url"
-	"os"
+	"io"
+	"net/http"
 	"path/filepath"
-	"strings"
 
 	"github.com/Guillem96/optimized-m3u-iptv-list-server/internal/configuration"
 	"github.com/Guillem96/optimized-m3u-iptv-list-server/pkg/utils"
@@ -13,41 +12,91 @@ import (
 
 type PlayListSource interface {
 	Fetch() (Playlist, error)
+	BaseStreamUrl() (string, error)
+	EPGUrl(streamId string) (string, error)
 }
 
-type PlayListFileSource struct {
+type defaultSource struct {
+	Username string
+	Password string
+	Url      string
+}
+
+func (s *defaultSource) BaseStreamUrl() (string, error) {
+	return fmt.Sprintf("%s/%s/%s", s.Url, s.Username, s.Password), nil
+}
+
+func (s *defaultSource) EPGUrl(streamId string) (string, error) {
+	url := fmt.Sprintf("%s/player_api.php?username=%s&password=%s&action=get_simple_data_table&stream_id=%s",
+		s.Url, s.Username, s.Password, streamId)
+
+	return url, nil
+}
+
+type PlayListLocalFileSource struct {
+	*defaultSource
 	LocalPath string
 }
 
-func (s *PlayListFileSource) Fetch() (Playlist, error) {
+func (s *PlayListLocalFileSource) Fetch() (Playlist, error) {
 	return Unmarshal(s.LocalPath)
 }
 
-type PlayListUrlSource struct {
-	Url string
+type PlayListRemoteFileSource struct {
+	*defaultSource
 }
 
-func (s *PlayListUrlSource) Fetch() (Playlist, error) {
-	parsedUrl, err := url.Parse(s.Url)
-	if err != nil {
-		return nil, fmt.Errorf("error Parsing download url %v", s.Url)
+func (s *PlayListRemoteFileSource) Fetch() (Playlist, error) {
+	fname := filepath.Join(utils.TempDir(), fmt.Sprintf("%v.m3u", s.Username))
+	urlChannels := fmt.Sprintf("%s/get.php?username=%s&password=%s&type=m3u_plus&output=mpegts",
+		s.Url, s.Username, s.Password)
+	if err := utils.DownloadFile(fname, urlChannels); err != nil {
+		return nil, err
 	}
-
-	fname := filepath.Join(
-		utils.TempDir(),
-		fmt.Sprintf(
-			"%v%v.m3u",
-			strings.Replace(parsedUrl.RawPath, string(os.PathSeparator), "_", -1),
-			parsedUrl.RawQuery,
-		),
-	)
-	utils.DownloadFile(fname, s.Url)
 	return Unmarshal(fname)
 }
 
-func DigestYAMLSource(source configuration.M3USource) PlayListSource {
-	if source.File != "" {
-		return &PlayListFileSource{source.File}
+type PlayListAPISource struct {
+	*defaultSource
+}
+
+func (s *PlayListAPISource) Fetch() (cs Playlist, err error) {
+	urlChannels := fmt.Sprintf("%s/player_api.php?username=%s&password=%s&action=get_live_streams",
+		s.Url, s.Username, s.Password)
+
+	resp, err := http.Get(urlChannels)
+	if err != nil {
+		return
 	}
-	return &PlayListUrlSource{source.Url}
+	defer resp.Body.Close()
+
+	jsonrb, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	streamUrl, err := s.BaseStreamUrl()
+	if err != nil {
+		return
+	}
+
+	err = cs.FromJSON(jsonrb, streamUrl)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func DigestYAMLSource(source configuration.M3USource) PlayListSource {
+	ds := &defaultSource{Username: source.Username, Password: source.Password, Url: source.Url}
+
+	if source.FromLocalFile != "" {
+		return &PlayListLocalFileSource{ds, source.FromLocalFile}
+	}
+
+	if source.UseAPI {
+		return &PlayListAPISource{ds}
+	}
+
+	return &PlayListRemoteFileSource{ds}
 }
